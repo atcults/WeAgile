@@ -1,5 +1,5 @@
 using System;
-using Microsoft.Extensions.Configuration;
+using System.IO;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -9,13 +9,14 @@ namespace LibCloud.Core
 {
     public class Startup
     {
-        public static IConfigurationRoot Configuration { get; set; }
-        public static IServiceProvider ServiceProvider { get; private set; }
-
         public static void ConfigureServices(IServiceCollection services)
         {
             //Use a MS SQL Server database
-            var sqlConnectionString = Configuration.GetConnectionString("DefaultConnection");
+            var sqlConnectionString = AppConfigProvider.Instance.GetConnectionString();
+
+            Console.WriteLine($"Current Directory: {Directory.GetCurrentDirectory()}");
+
+            Console.WriteLine($"Connection string: {sqlConnectionString}");
 
             services.AddEntityFramework().AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(
@@ -29,24 +30,13 @@ namespace LibCloud.Core
         {
             Console.WriteLine("Starting up application");
 
-            var services = new ServiceCollection();
+            AppConfigProvider.Instance.Configure(args);
 
-            Configuration = new ConfigurationBuilder()
-                           .AddCommandLine(args)
-                           .AddJsonFile($"appsettings.json", optional: false)
-                           .AddEnvironmentVariables()
-                           .Build();
+            ConfigureServices(ServiceCollectionProvider.Instance.Collections);
 
-            ConfigureServices(services);
-
-            ServiceProvider = services.BuildServiceProvider();
-
-            ServiceProvider.GetService<ApplicationDbContext>().Database.Migrate();
+            ServiceCollectionProvider.Instance.Provider.GetService<ApplicationDbContext>().Database.Migrate();
 
             Console.WriteLine("Done");
-
         }
     }
-
-
 }
