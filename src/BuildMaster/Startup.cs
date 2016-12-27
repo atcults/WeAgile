@@ -8,6 +8,8 @@ using BuildMaster.Extensions;
 using System.Threading.Tasks;
 using System.Linq;
 using BuildMaster.Model;
+using System.Diagnostics;
+using System.Collections.Generic;
 
 namespace LibCloud.Core
 {
@@ -28,6 +30,8 @@ namespace LibCloud.Core
                     b => b.MigrationsAssembly("BuildMaster")
                 ), ServiceLifetime.Scoped
             );
+
+            services.AddScoped<IRepository, Repository>();
         }
 
         public static void Main(string[] args)
@@ -40,33 +44,106 @@ namespace LibCloud.Core
 
             ServiceCollectionProvider.Instance.Provider.GetService<ApplicationDbContext>().Database.Migrate();
 
-            var taskArray = new Task[100];
-            100.Times(i =>
-            {
-                taskArray[i - 1] = Task.Factory.StartNew(() =>
-                  {
-                      Console.WriteLine(i);
-                      var sqlConnectionString = AppConfigProvider.Instance.GetConnectionString();
+            ServiceCollectionProvider.Instance.Provider.GetService<IRepository>().EnsureSeedData();
 
-                      var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
-                      optionsBuilder.UseSqlServer(
-                            sqlConnectionString,
-                            b => b.MigrationsAssembly("BuildMaster")
-                        );
+            var job = new Job();
 
-                      var context = new ApplicationDbContext(optionsBuilder.Options);
-                      context.Database.BeginTransaction();
-                      context.Add(new Configuration
-                      {
-                          Key = i.ToString(),
-                          Value = $"Value{i}"
-                      });
-                      context.SaveChanges();
-                      context.Database.CommitTransaction();
-                  });
+            job.Name = "Git Interation";
+            job.RootLocation = "/code/gitintegration";
+
+            List<JobTask> jobTasks = new List<JobTask>();
+
+            jobTasks.AddRange(new[]{
+                new JobTask{
+                    TaskType = TaskType.Repository,
+                    TaskName = "Check Updates",
+                    CommandName = "pull"
+                },
+                new JobTask{
+                    TaskType = TaskType.ShellCommand,
+                    TaskName = "Restore Project",
+                    CommandName = "dotnet",
+                    CommandAruments = "restore",
+                    WorkingPath = "/src/gitintegration"
+                },
+                new JobTask{
+                    TaskType = TaskType.ShellCommand,
+                    TaskName = "Build Project",
+                    CommandName = "dotnet",
+                    CommandAruments = "build",
+                    WorkingPath = "/src/gitintegration"
+                },
+                new JobTask{
+                    TaskType = TaskType.ShellCommand,
+                    TaskName = "Restore Test",
+                    CommandName = "dotnet",
+                    CommandAruments = "restore",
+                    WorkingPath = "/test/integrationtest"
+                },
+                new JobTask{
+                    TaskType = TaskType.ShellCommand,
+                    TaskName = "Integration Test",
+                    CommandName = "dotnet",
+                    CommandAruments = "test",
+                    WorkingPath = "/test/integrationtest"
+                },
             });
 
-            Task.WaitAll(taskArray);
+            job.JobTasks = jobTasks;
+
+            var gitProcessor = GitProcessor.GetProcessorForPath(job.RootLocation);
+
+            foreach (var task in jobTasks)
+            {
+                Console.WriteLine($"Executing task: {task.TaskName}");
+
+                var isSuccess = false;
+                if (task.TaskType == TaskType.Repository)
+                {
+                    if(task.CommandName == "pull")
+                    {
+                        isSuccess = gitProcessor.HasReceivedIncomingChanges;
+                        isSuccess = true;
+                    }
+                }
+                else
+                {
+                    var result = ProcessRunner.RunProcess(task);
+                    Console.WriteLine(result.Output);
+                    Console.WriteLine(result.ErrorOutput);
+                    isSuccess = result.ExitCode == 0;
+                }
+
+                if (!isSuccess) break;
+            }
+
+            // var taskArray = new Task[100];
+            // 100.Times(i =>
+            // {
+            //     taskArray[i - 1] = Task.Factory.StartNew(() =>
+            //       {
+            //           Console.WriteLine(i);
+            //           var sqlConnectionString = AppConfigProvider.Instance.GetConnectionString();
+
+            //           var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
+            //           optionsBuilder.UseSqlServer(
+            //                 sqlConnectionString,
+            //                 b => b.MigrationsAssembly("BuildMaster")
+            //             );
+
+            //           var context = new ApplicationDbContext(optionsBuilder.Options);
+            //           context.Database.BeginTransaction();
+            //           context.Add(new Configuration
+            //           {
+            //               Key = i.ToString(),
+            //               Value = $"Value{i}"
+            //           });
+            //           context.SaveChanges();
+            //           context.Database.CommitTransaction();
+            //       });
+            // });
+
+            // Task.WaitAll(taskArray);
 
             //  var context = ServiceCollectionProvider.Instance.Provider.GetService<DbContext>(); 
             //         context.Database.BeginTransaction();
@@ -76,6 +153,8 @@ namespace LibCloud.Core
             //         });
             //         context.SaveChanges();
             //         context.Database.CommitTransaction();
+
+
 
             Console.WriteLine("Done");
         }

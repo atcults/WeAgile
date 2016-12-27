@@ -4,7 +4,7 @@
     "isShellCommand": true,
     "args": [],
     "options": {
-        "cwd": "${workspaceRoot}/src/LibCloud"
+        "cwd": "${workspaceRoot}/src/BuildMaster"
     },
     "tasks": [
         {

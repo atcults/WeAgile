@@ -6,9 +6,9 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceRoot}/src/LibCloud/bin/Debug/netcoreapp1.0/LibCloud.dll",
+            "program": "${workspaceRoot}/src/BuildMaster/bin/Debug/netcoreapp1.1/BuildMaster.dll",
             "args": [],
-            "cwd": "${workspaceRoot}/src/LibCloud",
+            "cwd": "${workspaceRoot}/src/BuildMaster",
             "externalConsole": false,
             "stopAtEntry": false,
             "internalConsoleOptions": "openOnSessionStart"
