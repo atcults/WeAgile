@@ -40,52 +40,44 @@ namespace LibCloud.Core
 
             AppConfigProvider.Instance.Configure(args);
 
-            ConfigureServices(ServiceCollectionProvider.Instance.Collections);
+          //  ConfigureServices(ServiceCollectionProvider.Instance.Collections);
 
-            ServiceCollectionProvider.Instance.Provider.GetService<ApplicationDbContext>().Database.Migrate();
+         //   ServiceCollectionProvider.Instance.Provider.GetService<ApplicationDbContext>().Database.Migrate();
 
-            ServiceCollectionProvider.Instance.Provider.GetService<IRepository>().EnsureSeedData();
+         //   ServiceCollectionProvider.Instance.Provider.GetService<IRepository>().EnsureSeedData();
 
             var job = new Job();
 
             job.Name = "Git Interation";
-            job.RootLocation = "/code/gitintegration";
+            job.RootLocation = "/Code/GitIntegration";
 
             List<JobTask> jobTasks = new List<JobTask>();
 
+
             jobTasks.AddRange(new[]{
                 new JobTask{
-                    TaskType = TaskType.Repository,
-                    TaskName = "Check Updates",
-                    CommandName = "pull"
-                },
-                new JobTask{
-                    TaskType = TaskType.ShellCommand,
                     TaskName = "Restore Project",
                     CommandName = "dotnet",
                     CommandAruments = "restore",
-                    WorkingPath = "/src/gitintegration"
+                    WorkingPath = "/src/GitIntegration"
                 },
                 new JobTask{
-                    TaskType = TaskType.ShellCommand,
                     TaskName = "Build Project",
                     CommandName = "dotnet",
                     CommandAruments = "build",
-                    WorkingPath = "/src/gitintegration"
+                    WorkingPath = "/src/GitIntegration"
                 },
                 new JobTask{
-                    TaskType = TaskType.ShellCommand,
                     TaskName = "Restore Test",
                     CommandName = "dotnet",
                     CommandAruments = "restore",
-                    WorkingPath = "/test/integrationtest"
+                    WorkingPath = "/test/IntegrationTest"
                 },
                 new JobTask{
-                    TaskType = TaskType.ShellCommand,
                     TaskName = "Integration Test",
                     CommandName = "dotnet",
                     CommandAruments = "test",
-                    WorkingPath = "/test/integrationtest"
+                    WorkingPath = "/test/IntegrationTest"
                 },
             });
 
@@ -98,21 +90,10 @@ namespace LibCloud.Core
                 Console.WriteLine($"Executing task: {task.TaskName}");
 
                 var isSuccess = false;
-                if (task.TaskType == TaskType.Repository)
-                {
-                    if(task.CommandName == "pull")
-                    {
-                        isSuccess = gitProcessor.HasReceivedIncomingChanges;
-                        isSuccess = true;
-                    }
-                }
-                else
-                {
-                    var result = ProcessRunner.RunProcess(task);
-                    Console.WriteLine(result.Output);
-                    Console.WriteLine(result.ErrorOutput);
-                    isSuccess = result.ExitCode == 0;
-                }
+                var result = ProcessRunner.RunProcess(task);
+                Console.WriteLine(result.Output);
+                Console.WriteLine(result.ErrorOutput);
+                isSuccess = result.ExitCode == 0;
 
                 if (!isSuccess) break;
             }

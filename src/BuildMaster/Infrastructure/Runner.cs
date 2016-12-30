@@ -30,7 +30,7 @@ namespace BuildMaster.Infrastructure
 
             process.StartInfo.FileName = JobTask.CommandName;
             process.StartInfo.Arguments = JobTask.CommandAruments;
-            process.StartInfo.WorkingDirectory = "/code/gitintegration" + JobTask.WorkingPath;
+            process.StartInfo.WorkingDirectory = "/Code/GitIntegration" + JobTask.WorkingPath;
             process.StartInfo.UseShellExecute = false;
             process.StartInfo.RedirectStandardError = true;
             process.StartInfo.RedirectStandardOutput = true;

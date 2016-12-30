@@ -8,15 +8,18 @@ namespace BuildMaster.Model
     public class Job : Entity
     {
         public string Name { get; set; }
-        public string RootLocation {get; set;}
+        public string RootLocation { get; set; }
         public string Configuration { get; set; }
+        public TriggerType TriggerType { get; set; }
+
+        public int TriggerTime {get; set;}
 
         [NotMapped]
-        public IList<JobTask> JobTasks 
+        public IList<JobTask> JobTasks
         {
             get
             {
-                if(string.IsNullOrEmpty(Configuration))
+                if (string.IsNullOrEmpty(Configuration))
                 {
                     return new List<JobTask>();
                 }
