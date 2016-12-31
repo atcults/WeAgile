@@ -10,8 +10,7 @@ namespace BuildMaster.Model
         public string Name { get; set; }
         public string RootLocation { get; set; }
         public string Configuration { get; set; }
-        public TriggerType TriggerType { get; set; }
-
+        public bool CheckVCS { get; set; }
         public int TriggerTime {get; set;}
 
         [NotMapped]

@@ -40,63 +40,34 @@ namespace LibCloud.Core
 
             AppConfigProvider.Instance.Configure(args);
 
-          //  ConfigureServices(ServiceCollectionProvider.Instance.Collections);
+           ConfigureServices(ServiceCollectionProvider.Instance.Collections);
 
-         //   ServiceCollectionProvider.Instance.Provider.GetService<ApplicationDbContext>().Database.Migrate();
+           ServiceCollectionProvider.Instance.Provider.GetService<ApplicationDbContext>().Database.Migrate();
 
-         //   ServiceCollectionProvider.Instance.Provider.GetService<IRepository>().EnsureSeedData();
+           var repository = ServiceCollectionProvider.Instance.Provider.GetService<IRepository>();
 
-            var job = new Job();
+           repository.EnsureSeedData();
 
-            job.Name = "Git Interation";
-            job.RootLocation = "/Code/GitIntegration";
+           var jobs = repository.GetAllJobs();
 
-            List<JobTask> jobTasks = new List<JobTask>();
+           Console.WriteLine(jobs.Count());
 
+            // var gitProcessor = GitProcessor.GetProcessorForPath(job.RootLocation);
 
-            jobTasks.AddRange(new[]{
-                new JobTask{
-                    TaskName = "Restore Project",
-                    CommandName = "dotnet",
-                    CommandAruments = "restore",
-                    WorkingPath = "/src/GitIntegration"
-                },
-                new JobTask{
-                    TaskName = "Build Project",
-                    CommandName = "dotnet",
-                    CommandAruments = "build",
-                    WorkingPath = "/src/GitIntegration"
-                },
-                new JobTask{
-                    TaskName = "Restore Test",
-                    CommandName = "dotnet",
-                    CommandAruments = "restore",
-                    WorkingPath = "/test/IntegrationTest"
-                },
-                new JobTask{
-                    TaskName = "Integration Test",
-                    CommandName = "dotnet",
-                    CommandAruments = "test",
-                    WorkingPath = "/test/IntegrationTest"
-                },
-            });
+            // foreach (var task in jobTasks)
+            // {
+            //     Console.WriteLine($"Executing task: {task.TaskName}");
 
-            job.JobTasks = jobTasks;
+            //     var isSuccess = false;
+            //     var result = ProcessRunner.RunProcess(job.RootLocation, task);
+            //     Console.WriteLine(result.Output);
+            //     Console.WriteLine(result.ErrorOutput);
+            //     isSuccess = result.ExitCode == 0;
 
-            var gitProcessor = GitProcessor.GetProcessorForPath(job.RootLocation);
+            //     if (!isSuccess) break;
+            // }
 
-            foreach (var task in jobTasks)
-            {
-                Console.WriteLine($"Executing task: {task.TaskName}");
-
-                var isSuccess = false;
-                var result = ProcessRunner.RunProcess(task);
-                Console.WriteLine(result.Output);
-                Console.WriteLine(result.ErrorOutput);
-                isSuccess = result.ExitCode == 0;
-
-                if (!isSuccess) break;
-            }
+            List<Task> tasks  = new List<Task>();
 
             // var taskArray = new Task[100];
             // 100.Times(i =>

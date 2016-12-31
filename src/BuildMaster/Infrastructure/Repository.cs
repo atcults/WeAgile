@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using BuildMaster.Model;
 
@@ -7,6 +8,7 @@ namespace BuildMaster.Infrastructure
     public interface IRepository
     {
         void EnsureSeedData();
+        IList<Job> GetAllJobs();
     }
 
     public class Repository : IRepository
@@ -57,10 +59,54 @@ namespace BuildMaster.Infrastructure
                         Value = "stopped"
                     }
                 });
+
+                var job = new Job();
+
+                job.Name = "Git Interation";
+                job.RootLocation = "/Code/GitIntegration";
+
+                List<JobTask> jobTasks = new List<JobTask>();
+
+                jobTasks.AddRange(new[]{
+                    new JobTask{
+                        TaskName = "Restore Project",
+                        CommandName = "dotnet",
+                        CommandAruments = "restore",
+                        RelativePath = "/src/GitIntegration"
+                    },
+                    new JobTask{
+                        TaskName = "Build Project",
+                        CommandName = "dotnet",
+                        CommandAruments = "build",
+                        RelativePath = "/src/GitIntegration"
+                    },
+                    new JobTask{
+                        TaskName = "Restore Test",
+                        CommandName = "dotnet",
+                        CommandAruments = "restore",
+                        RelativePath = "/test/IntegrationTest"
+                    },
+                    new JobTask{
+                        TaskName = "Integration Test",
+                        CommandName = "dotnet",
+                        CommandAruments = "test",
+                        RelativePath = "/test/IntegrationTest"
+                    }
+                });
+
+                job.JobTasks = jobTasks;
+
+                _context.Jobs.Add(job);
+
                 _context.SaveChanges();
 
                 trn.Commit();
             }
+        }
+
+        public IList<Job> GetAllJobs()
+        {
+            return _context.Jobs.ToList();
         }
     }
 }

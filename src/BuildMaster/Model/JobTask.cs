@@ -5,6 +5,6 @@ namespace BuildMaster.Model
         public string TaskName { get; set; }
         public string CommandName { get; set; }
         public string CommandAruments { get; set; }
-        public string WorkingPath { get; set; }
+        public string RelativePath { get; set; }
     }
 }

@@ -6,7 +6,7 @@ namespace BuildMaster.Infrastructure
 {
     public class ProcessRunner
     {
-        public static JobTaskResult RunProcess(JobTask JobTask)
+        public static JobTaskResult RunProcess(string basePath, JobTask JobTask)
         {
             var result = new JobTaskResult();
 
@@ -30,7 +30,7 @@ namespace BuildMaster.Infrastructure
 
             process.StartInfo.FileName = JobTask.CommandName;
             process.StartInfo.Arguments = JobTask.CommandAruments;
-            process.StartInfo.WorkingDirectory = "/Code/GitIntegration" + JobTask.WorkingPath;
+            process.StartInfo.WorkingDirectory = basePath + JobTask.RelativePath;
             process.StartInfo.UseShellExecute = false;
             process.StartInfo.RedirectStandardError = true;
             process.StartInfo.RedirectStandardOutput = true;
