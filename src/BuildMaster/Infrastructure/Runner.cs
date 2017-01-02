@@ -6,26 +6,26 @@ namespace BuildMaster.Infrastructure
 {
     public class ProcessRunner
     {
-        public static JobTaskResult RunProcess(string basePath, JobTask JobTask)
+        public static int RunProcess(string basePath, JobTask JobTask)
         {
-            var result = new JobTaskResult();
-
             Process process = new Process();
 
             process.EnableRaisingEvents = true;
             process.OutputDataReceived += (sender, e) =>
             {
-                result.Output += e.Data + Environment.NewLine;
+                //result.Output += e.Data + Environment.NewLine;
             };
 
             process.ErrorDataReceived += (sender, e) =>
             {
-                result.ErrorOutput += e.Data + Environment.NewLine;
+                //result.ErrorOutput += e.Data + Environment.NewLine;
             };
+
+            var exitCode = 0;
 
             process.Exited += (sender, e) =>
             {
-                result.ExitCode = process.ExitCode;
+                exitCode = process.ExitCode;
             };
 
             process.StartInfo.FileName = JobTask.CommandName;
@@ -41,7 +41,7 @@ namespace BuildMaster.Infrastructure
 
             process.WaitForExit();
 
-            return result;
+            return exitCode;
         }
     }
 }
