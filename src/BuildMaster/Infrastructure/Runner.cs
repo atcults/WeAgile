@@ -6,7 +6,7 @@ namespace BuildMaster.Infrastructure
 {
     public class ProcessRunner
     {
-        public static int RunProcess(string basePath, JobTask JobTask)
+        public static int RunProcess(string commandName, string commandArguments, string workingDirectory)
         {
             Process process = new Process();
 
@@ -28,9 +28,9 @@ namespace BuildMaster.Infrastructure
                 exitCode = process.ExitCode;
             };
 
-            process.StartInfo.FileName = JobTask.CommandName;
-            process.StartInfo.Arguments = JobTask.CommandAruments;
-            process.StartInfo.WorkingDirectory = basePath + JobTask.RelativePath;
+            process.StartInfo.FileName = commandName;
+            process.StartInfo.Arguments = commandArguments;
+            process.StartInfo.WorkingDirectory = workingDirectory;
             process.StartInfo.UseShellExecute = false;
             process.StartInfo.RedirectStandardError = true;
             process.StartInfo.RedirectStandardOutput = true;

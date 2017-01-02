@@ -65,28 +65,28 @@ namespace BuildMaster.Infrastructure
                 job.Name = "Git Interation";
                 job.RootLocation = "/Code/GitIntegration";
 
-                List<JobTask> jobTasks = new List<JobTask>();
+                List<Job.Task> jobTasks = new List<Job.Task>();
 
                 jobTasks.AddRange(new[]{
-                    new JobTask{
+                    new Job.Task{
                         TaskName = "Restore Project",
                         CommandName = "dotnet",
                         CommandAruments = "restore",
                         RelativePath = "/src/GitIntegration"
                     },
-                    new JobTask{
+                    new Job.Task{
                         TaskName = "Build Project",
                         CommandName = "dotnet",
                         CommandAruments = "build",
                         RelativePath = "/src/GitIntegration"
                     },
-                    new JobTask{
+                    new Job.Task{
                         TaskName = "Restore Test",
                         CommandName = "dotnet",
                         CommandAruments = "restore",
                         RelativePath = "/test/IntegrationTest"
                     },
-                    new JobTask{
+                    new Job.Task{
                         TaskName = "Integration Test",
                         CommandName = "dotnet",
                         CommandAruments = "test",
