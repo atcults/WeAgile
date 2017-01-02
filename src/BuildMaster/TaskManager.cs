@@ -6,16 +6,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using BuildMaster.Infrastructure;
-using BuildMaster.Model;
 
 namespace BuildMaster
 {
     public class TaskManager
     {
         private readonly IDictionary<string, Task> _taskCollecton = new Dictionary<string, Task>();
-        private readonly IDictionary<string, List<JobQueue>> _jobQueues = new Dictionary<string, List<JobQueue>>();
-
-       // private readonly IDictionary<string, 
 
         private bool _stopSignal = false;
         private object _lock = new object();
@@ -30,10 +26,7 @@ namespace BuildMaster
 
             var jobs = repository.GetAllJobs();
 
-            foreach(var job in jobs)
-            {
-                _jobQueues.Add(job.Name, new List<JobQueue>());
-            }
+            System.Console.WriteLine("Jobs:" + jobs.Count);
 
             while (!_stopSignal)
             {
@@ -41,31 +34,24 @@ namespace BuildMaster
                 {
                     var jobName = job.Name;
 
+                    System.Console.WriteLine("Job:" + jobName);
+
                     if(_taskCollecton.ContainsKey(jobName)) continue;
                     
                     var timeSpan = System.TimeSpan.FromMinutes(job.TriggerTime);
 
-                    
+                    System.Console.WriteLine("Job Tasks" + job.JobTasks.Count);
 
-                    var JobQueue = _jobQueues[jobName].LastOrDefault();
-                    //if(JobQueue == null) 
-
-
-
-
+                    foreach(var jobTask in job.JobTasks)
+                    {
+                        System.Console.WriteLine(jobTask.TaskName);
+                    }
                 }
 
                 Thread.Sleep(5000);
 
-                 //var gitProcessor = GitProcessor.GetProcessorForPath(job.RootLocation);
-
-                 
+                 //var gitProcessor = GitProcessor.GetProcessorForPath(job.RootLocation);                 
             }
-        }
-
-        private void StartJob(string jobName)
-        {
-
         }
 
         public void Start()

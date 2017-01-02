@@ -36,8 +36,6 @@ namespace BuildMaster.Migrations
 
                     b.Property<bool>("CheckVCS");
 
-                    b.Property<string>("Configuration");
-
                     b.Property<string>("Name");
 
                     b.Property<string>("RootLocation");
@@ -47,6 +45,40 @@ namespace BuildMaster.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Jobs");
+                });
+
+            modelBuilder.Entity("BuildMaster.Model.JobTask", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<string>("CommandAruments");
+
+                    b.Property<string>("CommandName")
+                        .IsRequired();
+
+                    b.Property<long?>("JobdRefId");
+
+                    b.Property<string>("RelativePath");
+
+                    b.Property<string>("TaskName")
+                        .IsRequired();
+
+                    b.Property<int>("TaskOrder");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JobdRefId");
+
+                    b.ToTable("JobTasks");
+                });
+
+            modelBuilder.Entity("BuildMaster.Model.JobTask", b =>
+                {
+                    b.HasOne("BuildMaster.Model.Job", "Job")
+                        .WithMany("JobTasks")
+                        .HasForeignKey("JobdRefId");
                 });
         }
     }

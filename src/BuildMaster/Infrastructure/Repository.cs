@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using BuildMaster.Model;
+using Microsoft.EntityFrameworkCore;
 
 namespace BuildMaster.Infrastructure
 {
@@ -65,28 +66,32 @@ namespace BuildMaster.Infrastructure
                 job.Name = "Git Interation";
                 job.RootLocation = "/Code/GitIntegration";
 
-                List<Job.Task> jobTasks = new List<Job.Task>();
+                List<JobTask> jobTasks = new List<JobTask>();
 
                 jobTasks.AddRange(new[]{
-                    new Job.Task{
+                    new JobTask{
+                        TaskOrder = 0,
                         TaskName = "Restore Project",
                         CommandName = "dotnet",
                         CommandAruments = "restore",
                         RelativePath = "/src/GitIntegration"
                     },
-                    new Job.Task{
+                    new JobTask{
+                        TaskOrder = 1,
                         TaskName = "Build Project",
                         CommandName = "dotnet",
                         CommandAruments = "build",
                         RelativePath = "/src/GitIntegration"
                     },
-                    new Job.Task{
+                    new JobTask{
+                        TaskOrder = 2,
                         TaskName = "Restore Test",
                         CommandName = "dotnet",
                         CommandAruments = "restore",
                         RelativePath = "/test/IntegrationTest"
                     },
-                    new Job.Task{
+                    new JobTask{
+                        TaskOrder = 3,
                         TaskName = "Integration Test",
                         CommandName = "dotnet",
                         CommandAruments = "test",
@@ -106,7 +111,7 @@ namespace BuildMaster.Infrastructure
 
         public IList<Job> GetAllJobs()
         {
-            return _context.Jobs.ToList();
+            return _context.Jobs.Include(x=>x.JobTasks).ToList();
         }
     }
 }

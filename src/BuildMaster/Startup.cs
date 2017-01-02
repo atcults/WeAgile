@@ -39,20 +39,29 @@ namespace LibCloud.Core
 
             var manager = new TaskManager();
 
-            manager.Start();            
+            manager.Start();
 
             Console.WriteLine("Press ESC to stop");
 
-            while (!(Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Escape))
+            while (true)
             {
-                manager.Stop();
+                if (Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Escape)
+                {
+                    Console.WriteLine("Stopping Manager");
+                    manager.Stop();
+                    break;
+                }
+
+                System.Threading.Thread.Sleep(1000);
+                continue;
+                
             }
 
             Console.WriteLine("Waiting for all running tasks to finish");
 
             manager.WaitForAll();
 
-            Console.WriteLine("All tasks completed");                
+            Console.WriteLine("All tasks completed");
         }
     }
 }
