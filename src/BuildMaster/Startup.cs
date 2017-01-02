@@ -4,12 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using BuildMaster.Infrastructure;
-using BuildMaster.Extensions;
-using System.Threading.Tasks;
-using System.Linq;
-using BuildMaster.Model;
-using System.Diagnostics;
-using System.Collections.Generic;
+using BuildMaster;
 
 namespace LibCloud.Core
 {
@@ -40,75 +35,24 @@ namespace LibCloud.Core
 
             AppConfigProvider.Instance.Configure(args);
 
-           ConfigureServices(ServiceCollectionProvider.Instance.Collections);
+            ConfigureServices(ServiceCollectionProvider.Instance.Collections);
 
-           ServiceCollectionProvider.Instance.Provider.GetService<ApplicationDbContext>().Database.Migrate();
+            var manager = new TaskManager();
 
-           var repository = ServiceCollectionProvider.Instance.Provider.GetService<IRepository>();
+            manager.Start();            
 
-           repository.EnsureSeedData();
+            Console.WriteLine("Press ESC to stop");
 
-           var jobs = repository.GetAllJobs();
+            while (!(Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Escape))
+            {
+                manager.Stop();
+            }
 
-           Console.WriteLine(jobs.Count());
+            Console.WriteLine("Waiting for all running tasks to finish");
 
-            // var gitProcessor = GitProcessor.GetProcessorForPath(job.RootLocation);
+            manager.WaitForAll();
 
-            // foreach (var task in jobTasks)
-            // {
-            //     Console.WriteLine($"Executing task: {task.TaskName}");
-
-            //     var isSuccess = false;
-            //     var result = ProcessRunner.RunProcess(job.RootLocation, task);
-            //     Console.WriteLine(result.Output);
-            //     Console.WriteLine(result.ErrorOutput);
-            //     isSuccess = result.ExitCode == 0;
-
-            //     if (!isSuccess) break;
-            // }
-
-            List<Task> tasks  = new List<Task>();
-
-            // var taskArray = new Task[100];
-            // 100.Times(i =>
-            // {
-            //     taskArray[i - 1] = Task.Factory.StartNew(() =>
-            //       {
-            //           Console.WriteLine(i);
-            //           var sqlConnectionString = AppConfigProvider.Instance.GetConnectionString();
-
-            //           var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
-            //           optionsBuilder.UseSqlServer(
-            //                 sqlConnectionString,
-            //                 b => b.MigrationsAssembly("BuildMaster")
-            //             );
-
-            //           var context = new ApplicationDbContext(optionsBuilder.Options);
-            //           context.Database.BeginTransaction();
-            //           context.Add(new Configuration
-            //           {
-            //               Key = i.ToString(),
-            //               Value = $"Value{i}"
-            //           });
-            //           context.SaveChanges();
-            //           context.Database.CommitTransaction();
-            //       });
-            // });
-
-            // Task.WaitAll(taskArray);
-
-            //  var context = ServiceCollectionProvider.Instance.Provider.GetService<DbContext>(); 
-            //         context.Database.BeginTransaction();
-            //          context.Add(new Configuration{
-            //             Key = 1.ToString(),
-            //             Value = $"Value{1}"
-            //         });
-            //         context.SaveChanges();
-            //         context.Database.CommitTransaction();
-
-
-
-            Console.WriteLine("Done");
+            Console.WriteLine("All tasks completed");                
         }
     }
 }

@@ -1,4 +1,4 @@
-namespace BuildMaster.Model
+namespace BuildMaster.VersionControl
 {
     public class GitFileStatus
     {

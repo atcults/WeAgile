@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace BuildMaster.Model
+namespace BuildMaster.VersionControl
 {
     public class GitCommit
     {
