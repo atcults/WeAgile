@@ -39,5 +39,8 @@ namespace BuildMaster.Infrastructure
         public DbSet<Configuration> Configurations { get; set; }
 
         public DbSet<Job> Jobs { get; set; }
+        public DbSet<JobTask> JobTasks {get; set;}
+        public DbSet<JobQueue> JobQueues {get; set;}
+        public DbSet<JobQueueTaskResult> JobQueueTaskResults {get; set;}
     }
 }

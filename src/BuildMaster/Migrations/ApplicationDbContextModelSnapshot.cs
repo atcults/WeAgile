@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using BuildMaster.Infrastructure;
+using BuildMaster.Model;
 
 namespace BuildMaster.Migrations
 {
@@ -47,6 +48,61 @@ namespace BuildMaster.Migrations
                     b.ToTable("Jobs");
                 });
 
+            modelBuilder.Entity("BuildMaster.Model.JobQueue", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<DateTime?>("FinishTime");
+
+                    b.Property<long>("JobId");
+
+                    b.Property<int>("JobStatus");
+
+                    b.Property<DateTime>("QueuedTime");
+
+                    b.Property<DateTime?>("StartTime");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JobId");
+
+                    b.ToTable("JobQueues");
+                });
+
+            modelBuilder.Entity("BuildMaster.Model.JobQueueTaskResult", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<string>("CommandAruments");
+
+                    b.Property<string>("CommandName")
+                        .IsRequired();
+
+                    b.Property<int?>("ExitCode");
+
+                    b.Property<DateTime?>("FinishTime");
+
+                    b.Property<long?>("JobQueueId");
+
+                    b.Property<DateTime?>("StartTime");
+
+                    b.Property<string>("TaskName");
+
+                    b.Property<int>("TaskOrder");
+
+                    b.Property<string>("WorkingDirectory");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JobQueueId");
+
+                    b.ToTable("JobQueueTaskResults");
+                });
+
             modelBuilder.Entity("BuildMaster.Model.JobTask", b =>
                 {
                     b.Property<long>("Id")
@@ -58,7 +114,7 @@ namespace BuildMaster.Migrations
                     b.Property<string>("CommandName")
                         .IsRequired();
 
-                    b.Property<long?>("JobdRefId");
+                    b.Property<long?>("JobId");
 
                     b.Property<string>("RelativePath");
 
@@ -69,16 +125,30 @@ namespace BuildMaster.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("JobdRefId");
+                    b.HasIndex("JobId");
 
                     b.ToTable("JobTasks");
+                });
+
+            modelBuilder.Entity("BuildMaster.Model.JobQueue", b =>
+                {
+                    b.HasOne("BuildMaster.Model.Job", "Job")
+                        .WithMany("JobQueues")
+                        .HasForeignKey("JobId");
+                });
+
+            modelBuilder.Entity("BuildMaster.Model.JobQueueTaskResult", b =>
+                {
+                    b.HasOne("BuildMaster.Model.JobQueue", "JobQueue")
+                        .WithMany()
+                        .HasForeignKey("JobQueueId");
                 });
 
             modelBuilder.Entity("BuildMaster.Model.JobTask", b =>
                 {
                     b.HasOne("BuildMaster.Model.Job", "Job")
                         .WithMany("JobTasks")
-                        .HasForeignKey("JobdRefId");
+                        .HasForeignKey("JobId");
                 });
         }
     }

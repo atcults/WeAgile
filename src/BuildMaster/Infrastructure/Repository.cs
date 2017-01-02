@@ -10,6 +10,13 @@ namespace BuildMaster.Infrastructure
     {
         void EnsureSeedData();
         IList<Job> GetAllJobs();
+
+        Job GetJobWithTasks(int jobId);
+        void AddJobToQueue(int jobId);
+
+        JobQueue GetRecentJobQueue(int jobId);
+
+        void UpdateJobQueue(long id, JobStatus jobStatus);
     }
 
     public class Repository : IRepository
@@ -64,6 +71,8 @@ namespace BuildMaster.Infrastructure
                 var job = new Job();
 
                 job.Name = "Git Interation";
+                job.CheckVCS = true;
+                job.TriggerTime = 1;
                 job.RootLocation = "/Code/GitIntegration";
 
                 List<JobTask> jobTasks = new List<JobTask>();
@@ -111,7 +120,86 @@ namespace BuildMaster.Infrastructure
 
         public IList<Job> GetAllJobs()
         {
-            return _context.Jobs.Include(x=>x.JobTasks).ToList();
+            return _context.Jobs.ToList();
+        }
+
+        public Job GetJobWithTasks(int jobId)
+        {
+            return _context.Jobs.Include(x => x.JobTasks).FirstOrDefault(x => x.Id == jobId);
+        }
+
+        public JobQueue GetRecentJobQueue(int jobId)
+        {
+            return _context.JobQueues.Where(x => x.JobId == jobId).OrderByDescending(x => x.Id).FirstOrDefault();
+        }
+
+        public JobQueue GetJobQueueById(long id)
+        {
+            return _context.JobQueues.Include(x=>x.Job).Where(x=> x.Id == id).First();
+        }
+
+        public void UpdateJobQueue(long id, JobStatus jobStatus)
+        {
+            using (var tr = _context.Database.BeginTransaction())
+            {
+                try
+                {
+                    var existingQueue = GetJobQueueById(id);
+                    
+                    if(jobStatus == JobStatus.Running)
+                    {
+                        existingQueue.StartTime = DateTime.UtcNow;
+                    }
+                    else if(jobStatus == JobStatus.Skipped)
+                    {
+                        existingQueue.FinishTime = DateTime.UtcNow;
+                    }
+                    else
+                    {
+                        existingQueue.FinishTime = DateTime.UtcNow;
+                    }
+
+                    existingQueue.JobStatus = jobStatus;
+
+                    _context.SaveChanges();
+
+                    tr.Commit();
+                }
+                catch
+                {
+                    tr.Rollback();
+                }
+            }
+        }
+
+        public void AddJobToQueue(int jobId)
+        {
+            using (var tr = _context.Database.BeginTransaction())
+            {
+                try
+                {
+                    var existingQueue = GetRecentJobQueue(jobId);
+                    if (existingQueue != null && existingQueue.JobStatus == JobStatus.Queued)
+                    {
+                        return;
+                    }
+
+                    _context.JobQueues.Add(new JobQueue
+                    {
+                        JobId = jobId,
+                        JobStatus = JobStatus.Queued,
+                        QueuedTime = DateTime.UtcNow
+                    });
+
+                    _context.SaveChanges();
+
+                    tr.Commit();
+                }
+                catch
+                {
+                    tr.Rollback();
+                }
+            }
         }
     }
 }
