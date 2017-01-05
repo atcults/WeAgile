@@ -21,17 +21,13 @@ namespace BuildMaster
 
         private void QueueProcess()
         {
-            ServiceCollectionProvider.Instance.Provider.GetService<ApplicationDbContext>().Database.Migrate();
-
-            var repository = ServiceCollectionProvider.Instance.Provider.GetService<IRepository>();
-
-            repository.EnsureSeedData();
-
             while (!_stopSignal)
             {
+                var repository = ServiceCollectionProvider.Instance.Provider.GetService<IRepository>();
+
                 var jobs = repository.GetAllJobs();
 
-                System.Console.WriteLine("Jobs:" + jobs.Count);
+                System.Console.WriteLine("Queue Jobs:" + jobs.Count);
 
                 foreach (var job in jobs)
                 {
@@ -39,37 +35,27 @@ namespace BuildMaster
 
                     if (_taskCollecton.ContainsKey(jobName)) continue;
 
-                    var lastJobQueue = repository.GetRecentJobQueue((int)job.Id);
+                    var lastJobQueue = repository.GetRecentJobQueue(job.Id);
 
                     if (lastJobQueue == null)
                     {
-                        repository.AddJobToQueue((int)job.Id);
+                        repository.AddJobToQueue(job.Id);
                         continue;
                     }
-
-                    System.Console.WriteLine("Job:" + jobName);
 
                     var elepsedTime = System.DateTime.UtcNow - lastJobQueue.QueuedTime;
 
                     var timeSpan = System.TimeSpan.FromMinutes(job.TriggerTime);
+
+                    Console.WriteLine($"Time diff: {elepsedTime} - {timeSpan}");
 
                     if (elepsedTime < timeSpan)
                     {
                         continue;
                     }
 
-                    if (job.CheckVCS)
-                    {
-                        var gitProcessor = GitProcessor.GetProcessorForPath(job.RootLocation);
-                        if (gitProcessor.HasReceivedIncomingChanges)
-                        {
-                            repository.AddJobToQueue((int)job.Id);
-                        }
-                    }
-                    else
-                    {
-                        repository.AddJobToQueue((int)job.Id);
-                    }
+                    repository.AddJobToQueue(job.Id);
+
                 }
 
                 Thread.Sleep(5000);
@@ -78,13 +64,13 @@ namespace BuildMaster
 
         private void JobRunner()
         {
-            var repository = ServiceCollectionProvider.Instance.Provider.GetService<IRepository>();
-
             while (!_stopSignal)
             {
+                var repository = ServiceCollectionProvider.Instance.Provider.GetService<IRepository>();
+
                 var jobs = repository.GetAllJobs();
 
-                System.Console.WriteLine("Jobs:" + jobs.Count);
+                System.Console.WriteLine("Runner Jobs:" + jobs.Count);
 
                 foreach (var job in jobs)
                 {
@@ -92,11 +78,15 @@ namespace BuildMaster
 
                     if (_taskCollecton.ContainsKey(jobName)) continue;
 
-                    var lastJobQueue = repository.GetRecentJobQueue((int)job.Id);
+                    var lastJobQueue = repository.GetRecentJobQueue(job.Id);
 
-                    if(lastJobQueue != null || lastJobQueue.JobStatus == JobStatus.Queued)
+                    if (lastJobQueue != null && lastJobQueue.JobStatus == JobStatus.Queued)
                     {
-                        _taskCollecton.Add(job.Name, Task.Factory.StartNew(() => RunJob(job.Name, (int)job.Id)));
+                        Console.WriteLine($"Job: {job.Id}, Queue: {lastJobQueue.JobStatus}");
+
+                        repository.UpdateJobQueue(lastJobQueue.Id, JobStatus.Running);
+                        var task = Task.Factory.StartNew(() => RunJob(job.Id)).ContinueWith(tsk => _taskCollecton.Remove(job.Name));
+                        _taskCollecton.Add(job.Name, task);
                     }
                 }
 
@@ -104,27 +94,41 @@ namespace BuildMaster
             }
         }
 
-        private void RunJob(string jobName, long jobQueueId)
+        private void RunJob(long jobId)
         {
             var repository = ServiceCollectionProvider.Instance.Provider.GetService<IRepository>();
 
-            repository.UpdateJobQueue(jobQueueId, JobStatus.Running);
+            var job = repository.GetJob(jobId);
 
-            Console.WriteLine("Job Started");
+            var jobQueue = repository.GetRecentJobQueue(jobId);
+
+            if (job.CheckVCS)
+            {
+                Console.WriteLine("Checking incoming changes");
+                var gitProcessor = GitProcessor.GetProcessorForPath(job.RootLocation);
+                if (!gitProcessor.HasReceivedIncomingChanges)
+                {
+                    Console.WriteLine("No incoming changes, Skipping...");
+                    repository.UpdateJobQueue(jobQueue.Id, JobStatus.Skipped);
+                    return;
+                }
+            }
 
             System.Threading.Thread.Sleep(60000);
 
-            repository = ServiceCollectionProvider.Instance.Provider.GetService<IRepository>();
+            repository.UpdateJobQueue(jobQueue.Id, JobStatus.Success);
 
-            repository.UpdateJobQueue(jobQueueId, JobStatus.Success);
-
-            Console.WriteLine("Job Finished");
-
-            _taskCollecton.Remove(jobName);
+            Console.WriteLine($"Job {job.Name} finished");
         }
 
         public void Start()
         {
+            ServiceCollectionProvider.Instance.Provider.GetService<ApplicationDbContext>().Database.Migrate();
+
+            var repository = ServiceCollectionProvider.Instance.Provider.GetService<IRepository>();
+
+            repository.EnsureSeedData();
+
             _taskCollecton.Add("queue", Task.Factory.StartNew(() => QueueProcess()));
             _taskCollecton.Add("process", Task.Factory.StartNew(() => JobRunner()));
         }

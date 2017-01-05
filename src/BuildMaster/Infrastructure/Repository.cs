@@ -9,14 +9,12 @@ namespace BuildMaster.Infrastructure
     public interface IRepository
     {
         void EnsureSeedData();
+        Job GetJob(long jobId);
         IList<Job> GetAllJobs();
-
-        Job GetJobWithTasks(int jobId);
-        void AddJobToQueue(int jobId);
-
-        JobQueue GetRecentJobQueue(int jobId);
-
-        void UpdateJobQueue(long id, JobStatus jobStatus);
+        Job GetJobWithTasks(long jobId);
+        void AddJobToQueue(long jobId);
+        JobQueue GetRecentJobQueue(long jobId);
+        void UpdateJobQueue(long jobQueueId, JobStatus jobStatus);
     }
 
     public class Repository : IRepository
@@ -119,48 +117,52 @@ namespace BuildMaster.Infrastructure
             }
         }
 
+        public Job GetJob(long jobId)
+        {
+            return _context.Jobs.FirstOrDefault(x => x.Id == jobId);
+        }
+
         public IList<Job> GetAllJobs()
         {
             return _context.Jobs.ToList();
         }
 
-        public Job GetJobWithTasks(int jobId)
+        public Job GetJobWithTasks(long jobId)
         {
             return _context.Jobs.Include(x => x.JobTasks).FirstOrDefault(x => x.Id == jobId);
         }
 
-        public JobQueue GetRecentJobQueue(int jobId)
+        public JobQueue GetRecentJobQueue(long jobId)
         {
             return _context.JobQueues.Where(x => x.JobId == jobId).OrderByDescending(x => x.Id).FirstOrDefault();
         }
 
         public JobQueue GetJobQueueById(long id)
         {
-            return _context.JobQueues.Include(x=>x.Job).Where(x=> x.Id == id).First();
+            return _context.JobQueues.Include(x => x.Job).First(x => x.Id == id);
         }
 
-        public void UpdateJobQueue(long id, JobStatus jobStatus)
+        public void AddJobToQueue(long jobId)
         {
             using (var tr = _context.Database.BeginTransaction())
             {
                 try
                 {
-                    var existingQueue = GetJobQueueById(id);
-                    
-                    if(jobStatus == JobStatus.Running)
+                    var existingQueue = GetRecentJobQueue(jobId);
+                    if (existingQueue != null && (existingQueue.JobStatus == JobStatus.Queued || existingQueue.JobStatus == JobStatus.Skipped))
                     {
-                        existingQueue.StartTime = DateTime.UtcNow;
-                    }
-                    else if(jobStatus == JobStatus.Skipped)
-                    {
-                        existingQueue.FinishTime = DateTime.UtcNow;
+                        existingQueue.JobStatus = JobStatus.Queued;
+                        existingQueue.QueuedTime = DateTime.UtcNow;
                     }
                     else
                     {
-                        existingQueue.FinishTime = DateTime.UtcNow;
+                        _context.JobQueues.Add(new JobQueue
+                        {
+                            JobId = jobId,
+                            JobStatus = JobStatus.Queued,
+                            QueuedTime = DateTime.UtcNow
+                        });
                     }
-
-                    existingQueue.JobStatus = jobStatus;
 
                     _context.SaveChanges();
 
@@ -173,24 +175,24 @@ namespace BuildMaster.Infrastructure
             }
         }
 
-        public void AddJobToQueue(int jobId)
+        public void UpdateJobQueue(long jobQueueId, JobStatus jobStatus)
         {
             using (var tr = _context.Database.BeginTransaction())
             {
                 try
                 {
-                    var existingQueue = GetRecentJobQueue(jobId);
-                    if (existingQueue != null && existingQueue.JobStatus == JobStatus.Queued)
+                    var existingQueue = GetJobQueueById(jobQueueId);
+
+                    if (jobStatus == JobStatus.Running)
                     {
-                        return;
+                        existingQueue.StartTime = DateTime.UtcNow;
+                    }
+                    else
+                    {
+                        existingQueue.FinishTime = DateTime.UtcNow;
                     }
 
-                    _context.JobQueues.Add(new JobQueue
-                    {
-                        JobId = jobId,
-                        JobStatus = JobStatus.Queued,
-                        QueuedTime = DateTime.UtcNow
-                    });
+                    existingQueue.JobStatus = jobStatus;
 
                     _context.SaveChanges();
 
