@@ -26,6 +26,7 @@ namespace BuildMaster.Infrastructure
         public Repository(ApplicationDbContext context)
         {
             _context = context;
+            Console.WriteLine("Getting Repository");
         }
 
         public void EnsureSeedData()

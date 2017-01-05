@@ -78,11 +78,7 @@ namespace BuildMaster
 
         private void JobRunner()
         {
-            ServiceCollectionProvider.Instance.Provider.GetService<ApplicationDbContext>().Database.Migrate();
-
             var repository = ServiceCollectionProvider.Instance.Provider.GetService<IRepository>();
-
-            repository.EnsureSeedData();
 
             while (!_stopSignal)
             {

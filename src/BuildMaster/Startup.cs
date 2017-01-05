@@ -23,10 +23,10 @@ namespace LibCloud.Core
                 options.UseSqlServer(
                     sqlConnectionString,
                     b => b.MigrationsAssembly("BuildMaster")
-                ), ServiceLifetime.Scoped
+                ), ServiceLifetime.Transient
             );
 
-            services.AddScoped<IRepository, Repository>();
+            services.AddTransient<IRepository, Repository>();
         }
 
         public static void Main(string[] args)
