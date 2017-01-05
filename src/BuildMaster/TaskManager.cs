@@ -19,6 +19,8 @@ namespace BuildMaster
         private bool _stopSignal = false;
         private object _lock = new object();
 
+        private int _poolInterval = 5000;
+
         private void QueueProcess()
         {
             while (!_stopSignal)
@@ -58,7 +60,7 @@ namespace BuildMaster
 
                 }
 
-                Thread.Sleep(5000);
+                Thread.Sleep(_poolInterval);
             }
         }
 
@@ -90,7 +92,7 @@ namespace BuildMaster
                     }
                 }
 
-                Thread.Sleep(5000);
+                Thread.Sleep(_poolInterval);
             }
         }
 
@@ -98,7 +100,7 @@ namespace BuildMaster
         {
             var repository = ServiceCollectionProvider.Instance.Provider.GetService<IRepository>();
 
-            var job = repository.GetJob(jobId);
+            var job = repository.GetJobWithTasks(jobId);
 
             var jobQueue = repository.GetRecentJobQueue(jobId);
 
@@ -114,9 +116,19 @@ namespace BuildMaster
                 }
             }
 
-            System.Threading.Thread.Sleep(60000);
+            var status = JobStatus.Success;
 
-            repository.UpdateJobQueue(jobQueue.Id, JobStatus.Success);
+            foreach(var jobTask in job.JobTasks)
+            {
+                var code = ProcessRunner.RunProcess(jobTask.CommandName, jobTask.CommandAruments, job.RootLocation + jobTask.RelativePath);
+                if(code != 0)
+                {
+                    status = JobStatus.Failed;
+                    break;
+                }
+            }
+
+            repository.UpdateJobQueue(jobQueue.Id, status);
 
             Console.WriteLine($"Job {job.Name} finished");
         }

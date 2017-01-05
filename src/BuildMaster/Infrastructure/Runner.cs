@@ -1,6 +1,4 @@
-using System;
 using System.Diagnostics;
-using BuildMaster.Model;
 
 namespace BuildMaster.Infrastructure
 {
@@ -8,16 +6,19 @@ namespace BuildMaster.Infrastructure
     {
         public static int RunProcess(string commandName, string commandArguments, string workingDirectory)
         {
+            System.Console.WriteLine($"Running {commandName}, {commandArguments}, {workingDirectory}");
             Process process = new Process();
 
             process.EnableRaisingEvents = true;
             process.OutputDataReceived += (sender, e) =>
             {
+                System.Console.WriteLine(e.Data);
                 //result.Output += e.Data + Environment.NewLine;
             };
 
             process.ErrorDataReceived += (sender, e) =>
             {
+                System.Console.WriteLine(e.Data);
                 //result.ErrorOutput += e.Data + Environment.NewLine;
             };
 
