@@ -1,0 +1,10 @@
+{
+  "ToolsPath": "c:/Environment/tools",
+  "TempPath": "c:/temp",
+  "Projects": [
+    {
+      "Name": "GitIntegration",
+      "Location": "c:/code/GitIntegration"
+    }
+  ]
+}
